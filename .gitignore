@@ -1,0 +1,26 @@
+# Ignore compiled binaries and libraries
+*.zip
+*.pth
+*.csv
+*.npy
+
+# Ignore system or OS-specific files
+__MACOSX/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*.so
+
+# Ignore other common editor/IDE artifacts
+*.log
+.vscode/
+.idea/
+
+# Venv
+research_venv/
+
+data/
+research_project/src/fine_tuned_vit/
+research_project/src/test_trainer/
+*.npy
