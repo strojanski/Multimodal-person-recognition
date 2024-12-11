@@ -1,5 +1,8 @@
 # Multimodal Person Recognition
 
+## Repository
+Source code is under src/. 
+
 
 ## Modality fusion 
 
