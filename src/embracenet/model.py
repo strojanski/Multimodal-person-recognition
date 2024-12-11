@@ -141,8 +141,17 @@ class TrimodalModel:
         """
         input_tensor = torch.tensor(input_list, dtype=torch.float32, device=self.device)
 
+        x_1 = input_list[0]
+        x_1 = x_1.view(32, -1) #self.input_size_list[0])
+
+        x_2 = input_list[1]
+        x_2 = x_2.view(32, -1) # self.input_size_list[1])
+
+        x_3 = input_list[2]
+        x_3 = x_3.view(32, -1) # self.input_size_list[2])
+
         # get output
-        output_tensor = self.model(input_tensor)
+        output_tensor = self.model([x_1, x_2, x_3])
 
         # finalize
         class_list = output_tensor.argmax(dim=-1).detach().cpu().numpy()
@@ -224,7 +233,7 @@ class EmbraceNetBimodalModule(nn.Module):
         
 
 
-        # dropout during training, shape 32
+        # dropout during training, shape 32x3
         availabilities = None
         if self.is_training and self.model_dropout:
             dropout_prob = torch.rand(1, device=self.device)[0]
