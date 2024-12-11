@@ -101,6 +101,7 @@ class TrimodalModel:
         output_tensor = self.model(input_tensors)  # Pass modality list to model
 
         loss = self.loss_fn(output_tensor, truth_tensor)
+        print(loss)
 
         # Adjust learning rate
         lr = self.lr
@@ -169,7 +170,7 @@ def initialize_weights(m):
 
 class EmbraceNetBimodalModule(nn.Module):
     def __init__(
-        self, device, is_training, input_size_list, n_classes=17, global_step=0
+        self, device, is_training, input_size_list, n_classes, global_step=0
     ):
         """
         Initialize an EmbraceNetBimodalModule.
@@ -202,7 +203,7 @@ class EmbraceNetBimodalModule(nn.Module):
             self.embracenet.apply(initialize_weights)
 
         # post embracement layers
-        self.post = nn.Linear(in_features=176, out_features=n_classes)
+        self.post = nn.Linear(in_features=256, out_features=n_classes)
 
     def forward(self, x):
         # separate x into left/right
@@ -211,35 +212,34 @@ class EmbraceNetBimodalModule(nn.Module):
             assert not torch.isnan(param).any(), f"NaN in parameter {name}"
             assert not torch.isinf(param).any(), f"Inf in parameter {name}"
 
-        print(x[0].shape, x[1].shape, x[2].shape)  
-        print(self.input_size_list)
 
         x_1 = x[0]
-        x_1 = x_1.view(-1,  45056) #self.input_size_list[0])
+        x_1 = x_1.view(32, -1) #self.input_size_list[0])
 
         x_2 = x[1]
-        x_2 = x_2.view(-1, 45056) # self.input_size_list[1])
+        x_2 = x_2.view(32, -1) # self.input_size_list[1])
 
-        x_3 = x[1]
-        x_3 = x_3.view(-1, 45056) # self.input_size_list[2])
+        x_3 = x[2]
+        x_3 = x_3.view(32, -1) # self.input_size_list[2])
+        
 
 
-        # dropout during training
+        # dropout during training, shape 32
         availabilities = None
         if self.is_training and self.model_dropout:
             dropout_prob = torch.rand(1, device=self.device)[0]
             if dropout_prob >= 0.5:
                 target_modalities = torch.round(
-                    torch.rand([len(x[1])], device=self.device)
+                    torch.rand([32], device=self.device)
                 ).to(torch.int64)
                 availabilities = nn.functional.one_hot(
-                    target_modalities, num_classes=2
+                    target_modalities, num_classes=3
                 ).float()
 
         # embrace
         x_embrace = self.embracenet([x_1, x_2, x_3], availabilities=availabilities)
 
-        return x_embrace
+        # return x_embrace
         # employ final layers
         x = self.post(x_embrace)
 

@@ -62,7 +62,7 @@ class EmbraceNet(nn.Module):
         assert len(input_list) == len(self.input_size_list)
         num_modalities = len(input_list)
         batch_size = input_list[0].shape[0]
-
+    
         # docking layer
         docking_output_list = []
         if self.bypass_docking:
@@ -72,7 +72,7 @@ class EmbraceNet(nn.Module):
                 x = getattr(self, "docking_%d" % (i))(input_data)
                 x = nn.functional.relu(x)
                 docking_output_list.append(x)
-
+                
         # check availabilities
         if availabilities is None:
             availabilities = torch.ones(
@@ -88,6 +88,7 @@ class EmbraceNet(nn.Module):
             )
         selection_probabilities = torch.mul(selection_probabilities, availabilities)
 
+        # normalize selection probabilities
         probability_sum = torch.sum(selection_probabilities, dim=-1, keepdim=True)
         selection_probabilities = torch.div(selection_probabilities, probability_sum)
 

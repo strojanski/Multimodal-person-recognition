@@ -6,13 +6,11 @@ import numpy as np
 
 
 class TrimodalLoader:
-    def __init__(self, iris, fingerprint, face, iy, fiy, fay):
+    def __init__(self, iris, fingerprint, face, y):
         self.iris = iris
         self.fingerprint = fingerprint
         self.face = face
-        self.iy = iy
-        self.fiy = fiy
-        self.fay = fay
+        self.y = y
         
         self.data_list = []
         self.prepare()
@@ -23,8 +21,8 @@ class TrimodalLoader:
         """
         Used to read data from disk, fills self.data_list with ({"left": mod1, "right": mod2, "label": label)
         """
-        for i, fi, fa, iy, fiy, fay in zip(self.iris, self.fingerprint, self.face, self.iy, self.fiy, self.fay):
-            self.data_list.append({"iris": i, "fingerprint": fi, "face": fa, "iris_label": iy, "fingerprint_label": fiy, "face_label": fay})
+        for i, fi, fa, l in zip(self.iris, self.fingerprint, self.face, self.y):
+            self.data_list.append({"iris": i, "fingerprint": fi, "face": fa, "label": l})
 
     def get_num_data(self):
         return len(self.data_list)
@@ -92,7 +90,7 @@ class TrimodalLoader:
         ]
         
         # Copy the label as a NumPy array
-        label = [np.array(data["iris_label"]), np.array(data["fingerprint_label"]), np.array(data["face_label"])]
+        label = np.array(data["label"])
         
         return input_data, label
 
