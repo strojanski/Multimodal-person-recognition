@@ -54,7 +54,66 @@ class TrimodalModel:
     def get_model(self):
         return self.model
 
-    def train_step(self, input_list, truth_list, summary=None):
+    def save_weights(self):
+        torch.save(self.model.embracenet.state_dict(), "embracenet_weights.pth")
+
+    def load_weights(self):
+        self.model.embracenet.load_state_dict(torch.load("embracenet_weights.pth"))
+
+    def test_step(self, input_list, truth_list):
+        
+        # self.model.post = nn.Identity() 
+        
+        batch_size = len(input_list)
+        modality_1_tensors = []
+        modality_2_tensors = []
+        modality_3_tensors = []
+
+        # Convert each modality per example in the batch to tensors
+        for i in range(batch_size):
+            modality_1 = torch.as_tensor(
+                input_list[i][0], dtype=torch.float, device=self.device
+            )  # shape [1, 60]
+            modality_2 = torch.as_tensor(
+                input_list[i][1], dtype=torch.float, device=self.device
+            )  # shape [1, 43]
+            modality_3 = torch.as_tensor(
+                input_list[i][2], dtype=torch.float, device=self.device
+            )
+            
+            modality_1_tensors.append(modality_1)
+            modality_2_tensors.append(modality_2)
+            modality_3_tensors.append(modality_3)
+            
+                # Stack tensors to create two modality tensors of shape [batch_size, ...]
+        modality_1_tensor = torch.cat(modality_1_tensors, dim=0)
+        modality_2_tensor = torch.cat(modality_2_tensors, dim=0)
+        modality_3_tensor = torch.cat(modality_3_tensors, dim=0)
+
+        # Combine modality tensors into a list for model input
+            # Combine modality tensors into a list for model input
+        input_tensors = [modality_1_tensor, modality_2_tensor, modality_3_tensor]
+        print(truth_list)
+        
+        truth_tensor = torch.tensor([x.item() for x in truth_list], dtype=torch.long, device=self.device)
+
+        # Forward pass through the model
+        output_tensor = self.model(input_tensors)  # Pass modality list to model
+
+        return output_tensor, truth_tensor
+
+        # loss = self.loss_fn(output_tensor, truth_tensor)
+        # print(loss)
+
+        # Adjust learning rate
+        # lr = self.lr
+        # for param_group in self.optim.param_groups:
+        #     param_group["lr"] = lr
+
+        # return output_tensor, loss.item()
+
+
+    def train_step(self, input_list, truth_list, summary=None, train=True):
         """
         Perform a training step with a batch of inputs and ground truth.
 
@@ -122,7 +181,7 @@ class TrimodalModel:
             summary.add_scalar("lr", lr, self.global_step)
 
         return loss.item()
-
+    
     def predict(self, input_list):
         # numpy to torch
         """
@@ -209,6 +268,7 @@ class EmbraceNetBimodalModule(nn.Module):
 
         # Initialize random weights
         if global_step == 0:
+            print("Initializing weights")
             self.embracenet.apply(initialize_weights)
 
         # post embracement layers
@@ -247,6 +307,7 @@ class EmbraceNetBimodalModule(nn.Module):
 
         # embrace
         x_embrace = self.embracenet([x_1, x_2, x_3], availabilities=availabilities)
+
 
         # return x_embrace
         # employ final layers
