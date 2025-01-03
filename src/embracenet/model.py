@@ -12,7 +12,7 @@ from embracenet import EmbraceNet
 
 class TrimodalModel:
     def __init__(self):
-        self.lr = 1e-3
+        self.lr = 1e-4
         self.model_dropout = True
 
     def prepare(self, is_training, input_size_list, global_step=0, n_classes=500):
@@ -60,9 +60,13 @@ class TrimodalModel:
     def load_weights(self):
         self.model.embracenet.load_state_dict(torch.load("embracenet_weights.pth"))
 
-    def test_step(self, input_list, truth_list):
+    def test_step(self, input_list):
+        # self.model.eval()
+        # self.model.embracenet.eval()
         
         # self.model.post = nn.Identity() 
+        self.model.model_dropout = False
+        self.model.is_training = False
         
         batch_size = len(input_list)
         modality_1_tensors = []
@@ -84,33 +88,18 @@ class TrimodalModel:
             modality_1_tensors.append(modality_1)
             modality_2_tensors.append(modality_2)
             modality_3_tensors.append(modality_3)
-            
-                # Stack tensors to create two modality tensors of shape [batch_size, ...]
+
+        # Stack tensors to create two modality tensors of shape [batch_size, ...]
         modality_1_tensor = torch.cat(modality_1_tensors, dim=0)
         modality_2_tensor = torch.cat(modality_2_tensors, dim=0)
         modality_3_tensor = torch.cat(modality_3_tensors, dim=0)
 
         # Combine modality tensors into a list for model input
-            # Combine modality tensors into a list for model input
         input_tensors = [modality_1_tensor, modality_2_tensor, modality_3_tensor]
-        print(truth_list)
-        
-        truth_tensor = torch.tensor([x.item() for x in truth_list], dtype=torch.long, device=self.device)
 
         # Forward pass through the model
         output_tensor = self.model(input_tensors)  # Pass modality list to model
-
-        return output_tensor, truth_tensor
-
-        # loss = self.loss_fn(output_tensor, truth_tensor)
-        # print(loss)
-
-        # Adjust learning rate
-        # lr = self.lr
-        # for param_group in self.optim.param_groups:
-        #     param_group["lr"] = lr
-
-        # return output_tensor, loss.item()
+        return output_tensor
 
 
     def train_step(self, input_list, truth_list, summary=None, train=True):
@@ -126,6 +115,7 @@ class TrimodalModel:
             float: The loss of the current step.
         """
         # Initialize list for modality tensors
+        
         batch_size = len(input_list)
         modality_1_tensors = []
         modality_2_tensors = []
@@ -158,9 +148,10 @@ class TrimodalModel:
 
         # Forward pass through the model
         output_tensor = self.model(input_tensors)  # Pass modality list to model
+        
+        # Compute accuracy
 
         loss = self.loss_fn(output_tensor, truth_tensor)
-        print(loss)
 
         # Adjust learning rate
         lr = self.lr
@@ -180,7 +171,7 @@ class TrimodalModel:
             summary.add_scalar("loss", loss, self.global_step)
             summary.add_scalar("lr", lr, self.global_step)
 
-        return loss.item()
+        return loss.item(), output_tensor
     
     def predict(self, input_list):
         # numpy to torch
@@ -258,11 +249,12 @@ class EmbraceNetBimodalModule(nn.Module):
         self.input_size_list = input_size_list
         self.n_classes = n_classes
 
+
         # embracenet
         self.embracenet = EmbraceNet(
             device=self.device,
             input_size_list=self.input_size_list,
-            embracement_size=256,
+            embracement_size=512,
             bypass_docking=False,
         )
 
@@ -272,7 +264,10 @@ class EmbraceNetBimodalModule(nn.Module):
             self.embracenet.apply(initialize_weights)
 
         # post embracement layers
-        self.post = nn.Linear(in_features=256, out_features=n_classes)
+        self.post = nn.Sequential(
+            nn.Linear(in_features=512, out_features=self.n_classes),
+            nn.LogSoftmax(dim=1),  
+        )
 
     def forward(self, x):
         # separate x into left/right
@@ -312,6 +307,8 @@ class EmbraceNetBimodalModule(nn.Module):
         # return x_embrace
         # employ final layers
         x = self.post(x_embrace)
-
+        
+        # if self.post == nn.Identity():
+        #     return x_embrace
         # output softmax
-        return nn.functional.log_softmax(x, dim=-1)
+        return x

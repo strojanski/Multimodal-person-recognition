@@ -83,11 +83,11 @@ class EmbraceNet(nn.Module):
 
         # adjust selection probabilities
         if selection_probabilities is None:
-            # selection_probabilities = torch.ones(
-            #     batch_size, len(input_list), dtype=torch.float, device=self.device
-            # )
+            selection_probabilities = torch.ones(
+                batch_size, len(input_list), dtype=torch.float, device=self.device
+            )
             
-            selection_probabilities = torch.rand(batch_size, len(input_list), dtype=torch.float, device=self.device)
+            # selection_probabilities = torch.rand(batch_size, len(input_list), dtype=torch.float, device=self.device)
             
         selection_probabilities = torch.mul(selection_probabilities, availabilities)
 
@@ -95,7 +95,7 @@ class EmbraceNet(nn.Module):
         probability_sum = torch.sum(selection_probabilities, dim=-1, keepdim=True)
         selection_probabilities = torch.div(selection_probabilities, probability_sum)
 
-        print("Selection probabilities: ", selection_probabilities)
+        # print("Selection probabilities: ", selection_probabilities)
         
         # stack docking outputs
         docking_output_stack = torch.stack(
@@ -107,13 +107,13 @@ class EmbraceNet(nn.Module):
             selection_probabilities, num_samples=self.embracement_size, replacement=True
         )  # [batch_size, embracement_size]
         
-        print("Modality indices (r_i): ", modality_indices)
+        # print("Modality indices (r_i): ", modality_indices)
         
         modality_toggles = nn.functional.one_hot(
             modality_indices, num_classes=num_modalities
         ).float()  # [batch_size, embracement_size, num_modalities]
         
-        print("Modality toggles (z_i): ", modality_toggles)
+        # print("Modality toggles (z_i): ", modality_toggles)
 
         embracement_output_stack = torch.mul(docking_output_stack, modality_toggles)
         embracement_output = torch.sum(

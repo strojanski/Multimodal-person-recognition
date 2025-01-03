@@ -14,6 +14,9 @@ class TrimodalLoader:
         
         self.data_list = []
         self.prepare()
+        self.shown = []
+        self.available_indices = [i for i in range(self.get_num_data()) if i not in self.shown]
+
 
         super().__init__()
 
@@ -40,12 +43,19 @@ class TrimodalLoader:
         input_list = []
         truth_list = []
 
+
         for _ in range(batch_size):
             input_data, label = self.get_random_data_pair()
+            if input_data is None:
+                return None, None
             input_list.append(input_data)
             truth_list.append(label)
 
         return input_list, truth_list  # [[mod1, mod2, ...]], label
+
+    def reset(self):
+        self.shown = []
+        self.available_indices = [i for i in range(self.get_num_data()) if i not in self.shown]
 
     def get_random_data_pair(self):
         """
@@ -54,13 +64,21 @@ class TrimodalLoader:
         Returns:
             tuple: A tuple containing the input data (list of modalities) and the label.
         """
-        data_index = np.random.randint(self.get_num_data())
+    
+        if len(self.available_indices) == 0:
+            # print("Done with all data")
+            return None, None
+
+        data_index = np.random.choice(self.available_indices)  # randomly select data index    
+
 
         # retrieve data
         input_data, label, _ = self.get_data_pair(
             data_index=data_index
         )  # [mod1, mod2, ...], label
 
+        self.shown.append(data_index)
+        self.available_indices.remove(data_index)
         # finalize
         return input_data, label
 
