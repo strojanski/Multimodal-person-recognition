@@ -60,3 +60,16 @@ The last table shows results of subsampling + PCA with 50 estimators:
 | Face+Fingerprint      | 0.926     | 0.912     | RF                |
 | Iris + Fingerprint    | 0.949     | 0.940     | RF                |
 | All                   | 0.975     | 0.968     | RF                |
+
+
+Using KNN yields best results
+
+| Modality              | Accuracy  | F1        | Model             |
+|----------------       |---------- |-------    |----------------   |
+| PCA Face                  | 0.361     | 0.316     | RF                |
+| PCA Iris                  | 0.893     | 0.873     | RF                |
+| PCA Fingerprint           | 0.842     | 0.825     | RF                |
+| PCA Face+Iris             | 0.950     | 0.937     | RF                |
+| PCA Face+Fingerprint      | 0.926     | 0.912     | RF                |
+| PCA Iris + Fingerprint    | 0.949     | 0.940     | RF                |
+| PCA all                   | 1.000     | 1.000     | RF                |
